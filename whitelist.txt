@@ -8,6 +8,7 @@ com.vnpay.bidv
 vn.com.bidv.ibank
 vn.com.bidv.bidvhome
 vn.com.bidv.softotp
+com.viettelpost.vtman
 vn.mpos.bidv
 com.zing.zalo
 com.bhxhapp
