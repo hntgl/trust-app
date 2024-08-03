@@ -91,6 +91,7 @@ com.coloros.backuprestore
 com.coloros.note
 com.coloros.onekeylockscreen
 com.sec.android.app.popupcalculator
+com.king.candycrushsaga
 com.google.android.youtube
 com.google.android.apps.searchlite
 com.zhiliaoapp.musically.go
