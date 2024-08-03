@@ -97,3 +97,4 @@ com.google.android.apps.searchlite
 com.zhiliaoapp.musically.go
 com.samsung.android.email.provider
 com.gorgeous.liteinternational
+com.spotify.music
