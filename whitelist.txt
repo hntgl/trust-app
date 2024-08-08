@@ -2,6 +2,8 @@ com.miui.calculator
 com.miui.mediaeditor
 com.miui.screenrecorder
 com.miui.weather2
+com.miui.compass
+com.xiaomi.scanner
 com.vnid
 com.sec.android.app.voicenote
 com.vnpay.bidv
@@ -9,6 +11,7 @@ vn.com.bidv.ibank
 vn.com.bidv.bidvhome
 vn.com.bidv.softotp
 com.viettelpost.vtman
+com.viettel.mocha.app
 vn.mpos.bidv
 com.zing.zalo
 com.bhxhapp
@@ -102,3 +105,9 @@ com.mm.android.DMSS
 vn.com.hanwhalifeplus.cpo
 com.lemon.lvoverseas
 com.hdviet.lichvannien.tuvi209
+mwg.tgdd.loyalty
+vn.homecredit.capp
+com.dts.freefireth
+com.viettelodol.elearning
+com.android.soundrecorder
+com.roblox.client
