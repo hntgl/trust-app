@@ -111,3 +111,4 @@ com.dts.freefireth
 com.viettelodol.elearning
 com.android.soundrecorder
 com.roblox.client
+com.vnpt.hnd
