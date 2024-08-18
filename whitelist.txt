@@ -112,3 +112,4 @@ com.viettelodol.elearning
 com.android.soundrecorder
 com.roblox.client
 com.vnpt.hnd
+com.vietnamese.Keyboard.alpha
