@@ -113,3 +113,5 @@ com.android.soundrecorder
 com.roblox.client
 com.vnpt.hnd
 com.vietnamese.Keyboard.alpha
+com.etax.icanhan
+com.lazada.android
