@@ -115,3 +115,4 @@ com.vnpt.hnd
 com.vietnamese.Keyboard.alpha
 com.etax.icanhan
 com.lazada.android
+com.tinypuzzle.line98
