@@ -118,3 +118,6 @@ com.lazada.android
 com.tinypuzzle.line98
 com.yoosee
 vieon.phim.tv
+vn.com.ggg.gpeople
+com.iqiyi.i18n
+com.tencent.qqlivei18n.tw
