@@ -4,4 +4,3 @@ adb.exe
 fart.exe
 fastboot.exe
 sed.exe
-wget.exe
