@@ -13,6 +13,8 @@ vn.com.bidv.softotp
 com.viettelpost.vtman
 com.viettel.mocha.app
 vn.mpos.bidv
+vn.mpos
+mpos.vn.baoviet
 com.zing.zalo
 com.bhxhapp
 com.mic.bluezone
@@ -79,6 +81,9 @@ com.goviet.passenger
 com.vnpay.Agribank3g
 com.tpb.mb.gprsandroid
 com.ocb.omniextra
+vn.com.ocb.awe
+com.ocb.omnicib
+com.ocb.iotp
 com.vnpay.SCB
 com.vnpay.hdbank
 com.vnpay.vpbankonline
@@ -88,6 +93,7 @@ vn.com.seabank.mb1
 phn.com.vn.mb
 com.bplus.vtpay
 com.viettel.ViettelPost
+com.vnpay.coopbank
 com.npcapp
 com.tencent.mm
 com.coloros.backuprestore
@@ -115,9 +121,12 @@ com.vnpt.hnd
 com.vietnamese.Keyboard.alpha
 com.etax.icanhan
 com.lazada.android
+vnpay.smartacccount
+com.mservice.momotransfer
 com.tinypuzzle.line98
 com.yoosee
 vieon.phim.tv
 vn.com.ggg.gpeople
 com.iqiyi.i18n
 com.tencent.qqlivei18n.tw
+com.bab.retailUAT
