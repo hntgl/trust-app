@@ -130,3 +130,4 @@ vn.com.ggg.gpeople
 com.iqiyi.i18n
 com.tencent.qqlivei18n.tw
 com.bab.retailUAT
+com.dts.freefiremax
