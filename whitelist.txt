@@ -43,6 +43,8 @@ com.sec.android.app.sbrowser
 com.sec.android.app.shealth
 com.google.android.apps.docs
 com.google.android.apps.docs.editors.docs
+com.google.android.apps.docs.editors.sheets
+com.google.android.apps.docs.editors.slides
 com.google.android.apps.photos
 com.google.android.apps.youtube.music
 com.google.android.ims
@@ -131,3 +133,4 @@ com.iqiyi.i18n
 com.tencent.qqlivei18n.tw
 com.bab.retailUAT
 com.dts.freefiremax
+com.microsoft.office.officehubrow
