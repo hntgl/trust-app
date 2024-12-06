@@ -134,3 +134,7 @@ com.tencent.qqlivei18n.tw
 com.bab.retailUAT
 com.dts.freefiremax
 com.microsoft.office.officehubrow
+app.revanced.android.gms
+app.revanced.android.youtube
+com.google.youtube
+com.google.apps.youtube.music
