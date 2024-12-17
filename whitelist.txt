@@ -139,3 +139,4 @@ app.revanced.android.youtube
 com.google.youtube
 com.google.apps.youtube.music
 jp.naver.line.android
+com.twitter.android
