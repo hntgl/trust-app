@@ -120,7 +120,7 @@ com.viettelodol.elearning
 com.android.soundrecorder
 com.roblox.client
 com.vnpt.hnd
-com.vietnamese.Keyboard.alpha
+com.vietnamese.Keyboard.ht
 com.etax.icanhan
 com.lazada.android
 vnpay.smartacccount
