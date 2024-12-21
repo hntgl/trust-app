@@ -38,6 +38,7 @@ com.samsung.android.app.notes
 com.samsung.android.app.notes.addons
 com.samsung.android.galaxy
 com.samsung.android.service.health
+com.samsung.android.voc
 com.sec.android.app.kidshome
 com.sec.android.app.sbrowser
 com.sec.android.app.shealth
@@ -134,6 +135,7 @@ com.tencent.qqlivei18n.tw
 com.bab.retailUAT
 com.dts.freefiremax
 com.microsoft.office.officehubrow
+com.microsoft.office.outlook
 app.revanced.android.gms
 app.revanced.android.youtube
 com.google.youtube
