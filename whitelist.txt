@@ -118,9 +118,11 @@ mwg.tgdd.loyalty
 vn.homecredit.capp
 com.dts.freefireth
 com.viettelodol.elearning
+com.viettel.android.handset.eduone
 com.android.soundrecorder
 com.roblox.client
 com.vnpt.hnd
+com.vnpt.tnvn
 com.vietnamese.Keyboard.ht
 com.etax.icanhan
 com.lazada.android
