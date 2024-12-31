@@ -146,3 +146,4 @@ jp.naver.line.android
 com.twitter.android
 com.garena.game.kgvn
 com.biomes.vanced
+com.vcb.sme
