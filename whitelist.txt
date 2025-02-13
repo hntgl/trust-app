@@ -148,3 +148,5 @@ com.garena.game.kgvn
 com.biomes.vanced
 com.vcb.sme
 pi.browser
+vn.org.vbsp.htqltd
+com.vietlott.mobile.android
