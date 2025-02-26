@@ -151,3 +151,4 @@ pi.browser
 vn.org.vbsp.htqltd
 com.vietlott.mobile.android
 com.vietnamese.Keyboard.alpha
+com.vietnamese.Keyboard.alpha2
