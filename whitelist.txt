@@ -153,3 +153,4 @@ com.vietlott.mobile.android
 com.vietnamese.Keyboard.alpha
 com.vietnamese.Keyboard.alpha2
 vn.vtv.vtvgo
+com.vng.inputmethod.labankey
