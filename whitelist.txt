@@ -1,4 +1,5 @@
 com.miui.calculator
+com.miui.notes
 com.miui.mediaeditor
 com.miui.screenrecorder
 com.miui.weather2
@@ -50,6 +51,8 @@ com.google.android.apps.photos
 com.google.android.apps.youtube.music
 com.google.android.ims
 com.google.android.apps.authenticator2
+com.google.android.contactkeys
+com.google.android.safetycore
 com.zing.mp3
 com.mm.android.smartlifeiot
 com.dahuatech.huachengsea
