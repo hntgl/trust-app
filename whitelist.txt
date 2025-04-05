@@ -157,3 +157,6 @@ com.vietnamese.Keyboard.alpha
 com.vietnamese.Keyboard.alpha2
 vn.vtv.vtvgo
 com.vng.inputmethod.labankey
+com.hvbb.hvndathang2
+com.vng.playtogether
+com.roblox.client.vnggames
