@@ -38,6 +38,9 @@ com.ss.android.ugc.trill
 com.samsung.android.app.notes
 com.samsung.android.app.notes.addons
 com.samsung.android.galaxy
+com.samsung.android.calendar
+com.sec.android.app.clockpackage
+com.samsung.android.app.reminder
 com.samsung.android.service.health
 com.samsung.android.voc
 com.sec.android.app.kidshome
@@ -122,6 +125,7 @@ vn.homecredit.capp
 com.dts.freefireth
 com.viettelodol.elearning
 com.viettel.android.handset.eduone
+com.vttm.vietteldiscovery
 com.android.soundrecorder
 com.roblox.client
 com.vnpt.hnd
@@ -160,3 +164,7 @@ com.vng.inputmethod.labankey
 com.hvbb.hvndathang2
 com.vng.playtogether
 com.roblox.client.vnggames
+com.vnpay.NHCSXH
+com.xiaomi.smarthome
+com.samsung.android.spay
+vn.com.techcombank.bb.corp.app
