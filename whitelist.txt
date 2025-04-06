@@ -168,3 +168,4 @@ com.vnpay.NHCSXH
 com.xiaomi.smarthome
 com.samsung.android.spay
 vn.com.techcombank.bb.corp.app
+com.sec.android.app.music
