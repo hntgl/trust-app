@@ -171,3 +171,4 @@ vn.com.techcombank.bb.corp.app
 com.sec.android.app.music
 com.google.android.contacts
 com.google.android.apps.adm
+com.openai.chatgpt
