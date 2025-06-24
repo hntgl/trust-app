@@ -198,3 +198,4 @@ com.vnp.myvinaphone
 com.google.android.keep
 com.deepseek.chat
 app.rvx.android.apps.youtube.music
+com.minicraft.pro
