@@ -199,3 +199,5 @@ com.google.android.keep
 com.deepseek.chat
 app.rvx.android.apps.youtube.music
 com.minicraft.pro
+vn.vietmap.live
+com.sec.android.easyMover
