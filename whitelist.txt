@@ -201,3 +201,6 @@ app.rvx.android.apps.youtube.music
 com.minicraft.pro
 vn.vietmap.live
 com.sec.android.easyMover
+com.samsung.android.app.watchmanager
+com.mcu.MyHome
+com.samsung.android.oneconnect
