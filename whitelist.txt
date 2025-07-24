@@ -204,3 +204,5 @@ com.sec.android.easyMover
 com.samsung.android.app.watchmanager
 com.mcu.MyHome
 com.samsung.android.oneconnect
+vn.evnspc.cskh.cskhevnspc.CSKHEVNSPC
+com.iot.hunonic
