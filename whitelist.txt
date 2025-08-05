@@ -206,3 +206,4 @@ com.mcu.MyHome
 com.samsung.android.oneconnect
 vn.evnspc.cskh.cskhevnspc.CSKHEVNSPC
 com.iot.hunonic
+ziga.cotuong.coup
