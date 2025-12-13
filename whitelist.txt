@@ -208,3 +208,4 @@ vn.evnspc.cskh.cskhevnspc.CSKHEVNSPC
 com.iot.hunonic
 ziga.cotuong.coup
 com.mcu.visionlook
+com.vnpay.bvbank
