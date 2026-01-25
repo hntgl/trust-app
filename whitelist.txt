@@ -210,3 +210,4 @@ ziga.cotuong.coup
 com.mcu.visionlook
 com.vnpay.bvbank
 com.hhgame.mlbbvn
+net.citigo.kiotviet.manager
