@@ -211,3 +211,4 @@ com.mcu.visionlook
 com.vnpay.bvbank
 com.hhgame.mlbbvn
 net.citigo.kiotviet.manager
+com.naxclow.v720
