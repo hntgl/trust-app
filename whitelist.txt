@@ -212,3 +212,4 @@ com.vnpay.bvbank
 com.hhgame.mlbbvn
 net.citigo.kiotviet.manager
 com.naxclow.v720
+com.viettel.vhome2
