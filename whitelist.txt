@@ -213,3 +213,4 @@ com.hhgame.mlbbvn
 net.citigo.kiotviet.manager
 com.naxclow.v720
 com.viettel.vhome2
+com.oplus.providers.telephony.permissions.patch
