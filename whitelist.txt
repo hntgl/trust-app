@@ -214,3 +214,5 @@ net.citigo.kiotviet.manager
 com.naxclow.v720
 com.viettel.vhome2
 com.oplus.providers.telephony.permissions.patch
+vn.dcs.icpv
+vn.dcs.icpvbook
