@@ -216,3 +216,4 @@ com.viettel.vhome2
 com.oplus.providers.telephony.permissions.patch
 vn.dcs.icpv
 vn.dcs.icpvbook
+vn.viettelstudy.k12
