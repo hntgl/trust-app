@@ -219,3 +219,4 @@ vn.dcs.icpvbook
 vn.viettelstudy.k12
 vn.com.umc.patient
 com.microsoft.teams
+vms.com.vn.mymobifone
