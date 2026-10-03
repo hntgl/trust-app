@@ -221,3 +221,5 @@ vn.com.umc.patient
 com.microsoft.teams
 vms.com.vn.mymobifone
 vn.vnpt.ONEHome
+com.rsupport.rs.activity.rsupport.aas2
+com.samsung.sree
