@@ -226,3 +226,5 @@ com.samsung.sree
 com.viettel.appviettel
 com.outfit7.mytalkingtomfree
 com.outfit7.herodash
+com.coloros.gamespaceui
+com.google.android.verifier
