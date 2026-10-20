@@ -228,3 +228,8 @@ com.outfit7.mytalkingtomfree
 com.outfit7.herodash
 com.coloros.gamespaceui
 com.google.android.verifier
+com.google.android.apps.tachyon
+com.google.android.music
+com.google.android.videos
+ru.maximoff.apktool
+de.szalkowski.activitylauncher
