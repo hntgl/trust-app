@@ -1,4 +1,4 @@
-name: Build e2fsck 1.47.4 (Windows x64, static MinGW)
+name: Build e2fsck 1.47.4 (Windows x64, static)
 
 on:
   workflow_dispatch:
@@ -14,26 +14,12 @@ jobs:
       run:
         shell: msys2 {0}
     steps:
-      # Keep the workflow and its patcher separate from the upstream source
-      # checkout. Checking upstream out at the workspace root would replace
-      # the repository containing this workflow/patch script.
-      - name: Checkout workflow repository
-        uses: actions/checkout@v4
-        with:
-          path: build-kit
-
       - name: Checkout upstream e2fsprogs 1.47.4
         uses: actions/checkout@v4
         with:
           repository: tytso/e2fsprogs
           ref: v1.47.4
-          path: e2fsprogs
           fetch-depth: 1
-
-      - name: Set up Python for the source compatibility patch
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
 
       - name: Set up MinGW-w64
         uses: msys2/setup-msys2@v2
@@ -43,84 +29,155 @@ jobs:
           install: >-
             make
             mingw-w64-x86_64-cc
+            mingw-w64-x86_64-python
 
-      - name: Apply MinGW compatibility patch to e2fsck
-        shell: pwsh
+      # ------------------------------------------------------------------
+      # Vá source để build được trên MinGW-w64 (Windows).
+      #  - ext2_io.h: giới thiệu macro default_io_manager, trỏ tới
+      #    windows_io_manager trên _WIN32 và unix_io_manager ở nơi khác.
+      #  - Thay thế mọi tham chiếu unix_io_manager bằng default_io_manager
+      #    trong các file sẽ được biên dịch (unix.c, mke2fs.c, plausible.c).
+      #  - e2fsck/unix.c: thêm NAME_MAX dự phòng và shim struct sigaction /
+      #    sigaction / SIGUSR1 / SIGUSR2 cho Windows.
+      # ------------------------------------------------------------------
+      - name: Apply Windows/MinGW compatibility patches
         run: |
-          python "$env:GITHUB_WORKSPACE/build-kit/scripts/patch-e2fsck-windows.py" "$env:GITHUB_WORKSPACE/e2fsprogs/e2fsck/unix.c"
+          set -euo pipefail
+          python - <<'PY'
+          import pathlib
+
+          # ---- 1. lib/ext2fs/ext2_io.h: thêm default_io_manager ----
+          p = pathlib.Path("lib/ext2fs/ext2_io.h")
+          s = p.read_text()
+          if "default_io_manager" not in s:
+              s += (
+                  "\n#ifndef default_io_manager\n"
+                  "#ifdef _WIN32\n"
+                  "extern io_manager windows_io_manager;\n"
+                  "#define default_io_manager windows_io_manager\n"
+                  "#else\n"
+                  "#define default_io_manager unix_io_manager\n"
+                  "#endif\n"
+                  "#endif\n"
+              )
+              p.write_text(s)
+              print("[patch] lib/ext2fs/ext2_io.h: added default_io_manager")
+          else:
+              print("[patch] lib/ext2fs/ext2_io.h: already has default_io_manager")
+
+          # ---- 2. Thay unix_io_manager trong các file sẽ build ----
+          for f in ["e2fsck/unix.c", "misc/mke2fs.c", "lib/support/plausible.c"]:
+              p = pathlib.Path(f)
+              if not p.exists():
+                  print(f"[patch] {f}: skipped (not present)")
+                  continue
+              s = p.read_text()
+              if "unix_io_manager" in s:
+                  s = s.replace("unix_io_manager", "default_io_manager")
+                  p.write_text(s)
+                  print(f"[patch] {f}: unix_io_manager -> default_io_manager")
+
+          # ---- 3. e2fsck/unix.c: NAME_MAX + sigaction shim ----
+          p = pathlib.Path("e2fsck/unix.c")
+          s = p.read_text()
+          if "e2fsck_mingw_patched" not in s:
+              anchor = '#include "e2fsck.h"'
+              if anchor not in s:
+                  raise SystemExit(
+                      "ERROR: anchor not found in e2fsck/unix.c; "
+                      "file may not be at expected version."
+                  )
+              block = """
+          /* e2fsck_mingw_patched: Windows/MinGW compatibility shims */
+          #ifndef NAME_MAX
+          #define NAME_MAX 255
+          #endif
+
+          #ifdef _WIN32
+          #include <signal.h>
+          /* Minimal struct sigaction: e2fsck only uses signal handling on
+             Unix for Ctrl-C / SIGUSR1/2; on Windows the calls become no-ops. */
+          struct sigaction { void (*sa_handler)(int); int sa_flags; unsigned long sa_mask; };
+          #define sigaction(sig, act, old) (0)
+          #ifndef SIGUSR1
+          #define SIGUSR1 0
+          #endif
+          #ifndef SIGUSR2
+          #define SIGUSR2 0
+          #endif
+          #endif
+          """
+              s = s.replace(anchor, anchor + "\n" + block, 1)
+              p.write_text(s)
+              print("[patch] e2fsck/unix.c: added NAME_MAX + sigaction shims")
+          else:
+              print("[patch] e2fsck/unix.c: already patched")
+          PY
 
       - name: Configure and build e2fsck
-        working-directory: e2fsprogs
         run: |
           set -euo pipefail
           export CFLAGS="-O2 -pipe"
           export LDFLAGS="-static -static-libgcc"
           ./configure --disable-nls
 
-          # Build the generated headers and static libraries required by e2fsck.
-          make -j2 top-deps V=1 2>&1 | tee build.log
-          make -j2 -C lib/et all V=1 2>&1 | tee -a build.log
+          make -j2 -C lib/et all V=1 2>&1 | tee build.log
           make -j2 -C lib/uuid all V=1 2>&1 | tee -a build.log
           make -j2 -C lib/blkid all V=1 2>&1 | tee -a build.log
           make -j2 -C lib/ext2fs all V=1 2>&1 | tee -a build.log
           make -j2 -C lib/support all V=1 2>&1 | tee -a build.log
           make -j2 -C lib/e2p all V=1 2>&1 | tee -a build.log
 
-          # Build the executable explicitly rather than unsupported tools.
+          # Build e2fsck (target tường minh)
           make -j2 -C e2fsck e2fsck V=1 2>&1 | tee -a build.log
+
           test -f e2fsck/e2fsck.exe
           ./e2fsck/e2fsck.exe -V 2>&1 | tee -a build.log
 
-          # Build mke2fs only as a test-image generator; do not package it.
+          # Build mke2fs chỉ để tạo ảnh test (không đóng gói)
           make -j2 -C misc mke2fs V=1 2>&1 | tee -a build.log
-          test -f misc/mke2fs.exe
           ./misc/mke2fs.exe -F -q -t ext4 test-e2fsck.ext4 64M 2>&1 | tee -a build.log
           ./e2fsck/e2fsck.exe -fn test-e2fsck.ext4 2>&1 | tee -a build.log
         env:
           MSYSTEM: MINGW64
 
       - name: Verify standalone dependencies and package
-        working-directory: e2fsprogs
         run: |
           set -euo pipefail
-          mkdir -p ../dist
-          cp e2fsck/e2fsck.exe ../dist/e2fsck.exe
-          strip ../dist/e2fsck.exe
+          mkdir -p dist
+          cp e2fsck/e2fsck.exe dist/e2fsck.exe
+          strip dist/e2fsck.exe
 
-          objdump -p ../dist/e2fsck.exe | sed -n 's/^[[:space:]]*DLL Name: //p' \
-            | sort -fu > ../dist/DEPENDENCIES.txt
+          objdump -p dist/e2fsck.exe | sed -n 's/^[[:space:]]*DLL Name: //p' \
+            | sort -fu > dist/DEPENDENCIES.txt
 
-          # Reject MinGW runtime DLL imports. Normal Windows system DLLs are OK.
-          if grep -Eiq '^(libgcc_s|libstdc\+\+|libwinpthread|libintl|libiconv).*\.dll$' ../dist/DEPENDENCIES.txt; then
+          if grep -Eiq '^(libgcc_s|libstdc\+\+|libwinpthread|libintl|libiconv).*\.dll$' dist/DEPENDENCIES.txt; then
             echo "ERROR: executable still depends on a non-Windows runtime DLL:" >&2
-            cat ../dist/DEPENDENCIES.txt >&2
+            cat dist/DEPENDENCIES.txt >&2
             exit 1
           fi
 
-          cat > ../dist/README.txt <<'EOF'
-          e2fsck 1.47.4 - Windows x64 (MinGW-w64 static build)
+          cat > dist/README.txt <<'EOF'
+          e2fsck 1.47.4 - Windows x64 (MinGW-w64)
 
-          Source: tytso/e2fsprogs tag v1.47.4.
-          This is an experimental native Windows port build, not an official
-          upstream Windows release. MinGW runtime DLLs are checked at build time;
-          Windows system DLLs remain normal operating-system dependencies.
+          Built from the upstream tytso/e2fsprogs repository, tag v1.47.4,
+          with local Windows/MinGW compatibility patches applied.
 
-          Windows compatibility changes in e2fsck/unix.c:
-          - use the upstream default_io_manager abstraction, which selects
-            windows_io_manager on Windows;
-          - use the Windows CRT signal() API for Ctrl+C / termination;
-          - skip Linux-only battery status probing.
+          This package contains e2fsck.exe only. No Cygwin or MinGW runtime DLL
+          should be required; standard Windows system DLLs remain dependencies.
 
-          The CI run validates e2fsck -V and runs e2fsck -fn against a fresh
-          ext4 image. This does not validate every repair path or raw-drive
-          access. Windows mounted-volume detection is not equivalent to Linux
-          mount detection. Never run a repair on a mounted/in-use volume.
-          Test on a backup image before using it with a physical phone partition.
+          The CI build validates the version output and checks a freshly-created
+          ext4 image in read-only mode (-f -n).
+
+          IMPORTANT: This is a Windows port build, not an official upstream
+          Windows release. Use it on a backup/copy of an ext4 image first.
+          Raw Windows physical-partition access and mounted-volume detection
+          are not equivalent to Linux /dev and mount handling.
           EOF
 
-          sha256sum ../dist/e2fsck.exe > ../dist/SHA256SUMS.txt
-          cat ../dist/DEPENDENCIES.txt
-          cat ../dist/SHA256SUMS.txt
+          sha256sum dist/e2fsck.exe > dist/SHA256SUMS.txt
+          cat dist/DEPENDENCIES.txt
+          cat dist/SHA256SUMS.txt
         env:
           MSYSTEM: MINGW64
 
@@ -137,6 +194,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: e2fsck-1.47.4-build-log
-          path: e2fsprogs/build.log
+          path: build.log
           if-no-files-found: ignore
           retention-days: 7
