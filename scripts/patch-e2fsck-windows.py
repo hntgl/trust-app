@@ -7,21 +7,28 @@ import sys
 from pathlib import Path
 
 
-def replace_one(pattern: re.Pattern[str], replacement: str, text: str, label: str) -> str:
-    updated, count = pattern.subn(replacement, text, count=1)
-    if count != 1:
-        raise RuntimeError(f"Expected exactly one {label} match; found {count}.")
-    return updated
-
 
 def main() -> int:
     if len(sys.argv) != 2:
-        print("Usage: patch-e2fsck-windows.py PATH/TO/e2fsck/unix.c", file=sys.stderr)
+        print("Usage: patch-e2fsck-windows.py PATH/TO/e2fsck-DIRECTORY", file=sys.stderr)
         return 2
 
-    source = Path(sys.argv[1])
-    if not source.is_file():
-        raise FileNotFoundError(source)
+    target = Path(sys.argv[1])
+    if target.is_dir():
+        e2fsck_dir = target
+    elif target.is_file() and target.name == "unix.c":
+        # Backward-compatible convenience for callers passing the old path.
+        e2fsck_dir = target.parent
+    else:
+        raise FileNotFoundError(
+            f"Expected an e2fsck source directory (or its unix.c): {target}"
+        )
+
+    source = e2fsck_dir / "unix.c"
+    pass5_source = e2fsck_dir / "pass5.c"
+    for path in (source, pass5_source):
+        if not path.is_file():
+            raise FileNotFoundError(path)
 
     text = source.read_text(encoding="utf-8").replace("\r\n", "\n")
 
@@ -98,11 +105,34 @@ def main() -> int:
     if text.count("default_io_manager") != 3:
         raise RuntimeError("The expected default_io_manager references were not installed.")
 
+    # e2fsck/pass5.c includes sys/ioctl.h unconditionally in 1.47.4, but
+    # that POSIX header is not supplied by MinGW-w64. In this source file the
+    # header is not used: there are no ioctl() calls or ioctl-specific macros.
+    # Remove only the exact include; do not provide a fake compatibility header.
+    pass5_text = pass5_source.read_text(encoding="utf-8").replace("\r\n", "\n")
+    ioctl_include = re.compile(r"(?m)^#include <sys/ioctl\.h>\n")
+    pass5_text_new, include_count = ioctl_include.subn("", pass5_text, count=1)
+    if include_count != 1:
+        raise RuntimeError(
+            "Expected exactly one unconditional '#include <sys/ioctl.h>' "
+            f"in upstream e2fsck/pass5.c; found {include_count}."
+        )
+    if re.search(r"\bioctl\s*\(", pass5_text_new):
+        raise RuntimeError(
+            "pass5.c contains an ioctl() call; refusing to remove sys/ioctl.h "
+            "without a Windows implementation."
+        )
+    # Commit both source edits only after all strict pattern checks pass.
     source.write_text(text, encoding="utf-8", newline="\n")
-    print("Patched e2fsck/unix.c for native MinGW-w64:")
-    print("  - bypass Linux-only battery status probing on Windows")
-    print("  - use Windows CRT signal() for SIGINT/SIGTERM")
-    print("  - select default_io_manager (windows_io_manager on _WIN32)")
+    pass5_source.write_text(pass5_text_new, encoding="utf-8", newline="\n")
+
+    print("Patched e2fsck sources for native MinGW-w64:")
+    print("  unix.c:")
+    print("    - bypass Linux-only battery status probing on Windows")
+    print("    - use Windows CRT signal() for SIGINT/SIGTERM")
+    print("    - select default_io_manager (windows_io_manager on _WIN32)")
+    print("  pass5.c:")
+    print("    - remove unused POSIX-only sys/ioctl.h include")
     return 0
 
 
