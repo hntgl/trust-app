@@ -47,7 +47,7 @@ jobs:
       - name: Apply MinGW compatibility patch to e2fsck
         shell: pwsh
         run: |
-          python "$env:GITHUB_WORKSPACE/build-kit/scripts/patch-e2fsck-windows.py" "$env:GITHUB_WORKSPACE/e2fsprogs/e2fsck/unix.c"
+          python "$env:GITHUB_WORKSPACE/build-kit/scripts/patch-e2fsck-windows.py" "$env:GITHUB_WORKSPACE/e2fsprogs/e2fsck"
 
       - name: Configure and build e2fsck
         working-directory: e2fsprogs
