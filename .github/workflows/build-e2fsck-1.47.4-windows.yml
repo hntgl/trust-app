@@ -33,12 +33,12 @@ jobs:
 
       # ------------------------------------------------------------------
       # Vá source để build được trên MinGW-w64 (Windows).
-      #  - ext2_io.h: giới thiệu macro default_io_manager, trỏ tới
-      #    windows_io_manager trên _WIN32 và unix_io_manager ở nơi khác.
-      #  - Thay thế mọi tham chiếu unix_io_manager bằng default_io_manager
-      #    trong các file sẽ được biên dịch (unix.c, mke2fs.c, plausible.c).
-      #  - e2fsck/unix.c: thêm NAME_MAX dự phòng và shim struct sigaction /
-      #    sigaction / SIGUSR1 / SIGUSR2 cho Windows.
+      #  - ext2_io.h: thêm macro default_io_manager trỏ tới
+      #    windows_io_manager trên _WIN32, unix_io_manager ở nơi khác.
+      #  - Thay unix_io_manager -> default_io_manager trong các file sẽ
+      #    được biên dịch (unix.c, mke2fs.c, plausible.c).
+      #  - e2fsck/unix.c: thêm NAME_MAX dự phòng và shim struct sigaction
+      #    / sigaction / SIGUSR1 / SIGUSR2 cho Windows.
       # ------------------------------------------------------------------
       - name: Apply Windows/MinGW compatibility patches
         run: |
@@ -121,9 +121,15 @@ jobs:
           export LDFLAGS="-static -static-libgcc"
           ./configure --disable-nls
 
+          # Thư viện phụ thuộc (giữ đúng thứ tự upstream)
           make -j2 -C lib/et all V=1 2>&1 | tee build.log
           make -j2 -C lib/uuid all V=1 2>&1 | tee -a build.log
           make -j2 -C lib/blkid all V=1 2>&1 | tee -a build.log
+
+          # Sinh ext2_err.h tường minh để tránh race với -j2
+          make -C lib/ext2fs ext2_err.h V=1 2>&1 | tee -a build.log
+
+          # Build toàn bộ thư viện ext2fs + các lib phụ thuộc khác
           make -j2 -C lib/ext2fs all V=1 2>&1 | tee -a build.log
           make -j2 -C lib/support all V=1 2>&1 | tee -a build.log
           make -j2 -C lib/e2p all V=1 2>&1 | tee -a build.log
