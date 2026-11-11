@@ -1,0 +1,118 @@
+name: Build e2fsck 1.47.4 (Windows x64, static)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: MinGW-w64 x64 static build
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - name: Checkout upstream e2fsprogs 1.47.4
+        uses: actions/checkout@v4
+        with:
+          repository: tytso/e2fsprogs
+          ref: v1.47.4
+          fetch-depth: 1
+
+      - name: Set up MinGW-w64
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            make
+            mingw-w64-x86_64-cc
+
+      - name: Configure and build e2fsck
+        run: |
+          set -euo pipefail
+          export CFLAGS="-O2 -pipe"
+          export LDFLAGS="-static -static-libgcc"
+          ./configure --disable-nls
+
+          # Build the generated headers and static libraries required by e2fsck.
+          make -j2 top-deps V=1 2>&1 | tee build.log
+          make -j2 -C lib/et all V=1 2>&1 | tee -a build.log
+          make -j2 -C lib/uuid all V=1 2>&1 | tee -a build.log
+          make -j2 -C lib/blkid all V=1 2>&1 | tee -a build.log
+          make -j2 -C lib/ext2fs all V=1 2>&1 | tee -a build.log
+          make -j2 -C lib/support all V=1 2>&1 | tee -a build.log
+          make -j2 -C lib/e2p all V=1 2>&1 | tee -a build.log
+
+          # e2fsck is deliberately built as an explicit target rather than
+          # invoking the full upstream build (which includes unsupported tools).
+          make -j2 -C e2fsck e2fsck V=1 2>&1 | tee -a build.log
+
+          test -f e2fsck/e2fsck.exe
+          ./e2fsck/e2fsck.exe -V 2>&1 | tee -a build.log
+
+          # Build mke2fs only as a test-image generator; it is not packaged.
+          make -j2 -C misc mke2fs V=1 2>&1 | tee -a build.log
+          ./misc/mke2fs.exe -F -q -t ext4 test-e2fsck.ext4 64M 2>&1 | tee -a build.log
+          ./e2fsck/e2fsck.exe -fn test-e2fsck.ext4 2>&1 | tee -a build.log
+        env:
+          MSYSTEM: MINGW64
+
+      - name: Verify standalone dependencies and package
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp e2fsck/e2fsck.exe dist/e2fsck.exe
+          strip dist/e2fsck.exe
+
+          objdump -p dist/e2fsck.exe | sed -n 's/^[[:space:]]*DLL Name: //p' \
+            | sort -fu > dist/DEPENDENCIES.txt
+
+          # These are MinGW runtime DLLs. A static standalone build must not
+          # depend on them; normal Windows system DLLs are allowed.
+          if grep -Eiq '^(libgcc_s|libstdc\+\+|libwinpthread|libintl|libiconv).*\.dll$' dist/DEPENDENCIES.txt; then
+            echo "ERROR: executable still depends on a non-Windows runtime DLL:" >&2
+            cat dist/DEPENDENCIES.txt >&2
+            exit 1
+          fi
+
+          cat > dist/README.txt <<'EOF'
+          e2fsck 1.47.4 - Windows x64 (MinGW-w64)
+
+          Built from the upstream tytso/e2fsprogs repository, tag v1.47.4.
+          This package contains e2fsck.exe only. No Cygwin or MinGW runtime DLL
+          should be required; standard Windows system DLLs remain dependencies.
+
+          The CI build validates the version output and checks a freshly-created
+          ext4 image in read-only mode (-f -n).
+
+          IMPORTANT: This is a Windows port build, not an official upstream
+          Windows release. Use it on a backup/copy of an ext4 image first.
+          Raw Windows physical-partition access and mounted-volume detection
+          are not equivalent to Linux /dev and mount handling.
+          EOF
+
+          sha256sum dist/e2fsck.exe > dist/SHA256SUMS.txt
+          cat dist/DEPENDENCIES.txt
+          cat dist/SHA256SUMS.txt
+        env:
+          MSYSTEM: MINGW64
+
+      - name: Upload e2fsck.exe artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2fsck-1.47.4-windows-x64-static
+          path: dist/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2fsck-1.47.4-build-log
+          path: build.log
+          if-no-files-found: ignore
+          retention-days: 7
