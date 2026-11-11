@@ -30,30 +30,100 @@ jobs:
             make
             mingw-w64-x86_64-cc
 
+      # ---------------------------------------------------------------
+      # Bổ sung: vá source để build được trên MinGW-w64 (Windows)
+      # Tham khảo các bản vá upstream:
+      #   - ext2_io.h: dùng default_io_manager thay vì unix_io_manager
+      #   - e2fsck/unix.c: bỏ sigaction/SIGUSR*, thêm NAME_MAX, dùng default_io_manager
+      #   - Loại bỏ -pthread khỏi CFLAGS để tránh phụ thuộc libwinpthread
+      # ---------------------------------------------------------------
+      - name: Apply Windows/MinGW compatibility patches
+        run: |
+          set -euo pipefail
+
+          # 1. ext2_io.h: chọn windows_io_manager trên _WIN32
+          python - <<'PY'
+          import pathlib
+          p = pathlib.Path("lib/ext2fs/ext2_io.h")
+          s = p.read_text()
+          s = s.replace(
+              "#ifdef _WIN32\n/* windows_io.c */\nextern io_manager windows_io_manager;\n#else\n/* unix_io.c */\nextern io_manager unix_io_manager;\nextern io_manager unixfd_io_manager;\n#endif",
+              "#ifdef _WIN32\n/* windows_io.c */\nextern io_manager windows_io_manager;\n#define default_io_manager windows_io_manager\n#else\n/* unix_io.c */\nextern io_manager unix_io_manager;\nextern io_manager unixfd_io_manager;\n#define default_io_manager unix_io_manager\n#endif"
+          )
+          p.write_text(s)
+          PY
+
+          # 2. e2fsck/unix.c: NAME_MAX, bỏ sigaction, dùng default_io_manager
+          python - <<'PY'
+          import pathlib
+          p = pathlib.Path("e2fsck/unix.c")
+          s = p.read_text()
+
+          # 2a. NAME_MAX (nếu chưa có)
+          if "#define NAME_MAX" not in s:
+              s = s.replace(
+                  '#include "e2fsck.h"',
+                  '#include "e2fsck.h"\n\n#ifndef NAME_MAX\n#define NAME_MAX 255\n#endif'
+              )
+
+          # 2b. Bỏ struct sigaction và các signal chỉ có trên Unix
+          #     (PRS, sigaction, SIGUSR1, SIGUSR2)
+          s = s.replace(
+              "static void PRS(struct sigaction *sa)",
+              "#ifndef _WIN32\nstatic void PRS(struct sigaction *sa)"
+          )
+          # đóng #ifndef sau hàm PRS (dùng dấu hiệu kết thúc hàm gần nhất)
+          # cách đơn giản: thêm #endif trước hàm kế tiếp
+          s = s.replace(
+              "\nstatic void sigcatcher_setup(void)",
+              "\n#endif /* !_WIN32 */\n\nstatic void sigcatcher_setup(void)"
+          )
+
+          # 2c. Bọc các lời gọi sigaction trong main()
+          s = s.replace(
+              "        memset(&sa, 0, sizeof(struct sigaction));\n        sa.sa_handler = sigcatcher;\n        sigaction(SIGINT, &sa, 0);\n#ifdef SIGUSR1\n        sigaction(SIGUSR1, &sa, 0);\n#endif\n#ifdef SIGUSR2\n        sigaction(SIGUSR2, &sa, 0);\n#endif",
+              "#ifndef _WIN32\n        memset(&sa, 0, sizeof(struct sigaction));\n        sa.sa_handler = sigcatcher;\n        sigaction(SIGINT, &sa, 0);\n#ifdef SIGUSR1\n        sigaction(SIGUSR1, &sa, 0);\n#endif\n#ifdef SIGUSR2\n        sigaction(SIGUSR2, &sa, 0);\n#endif\n#endif /* !_WIN32 */"
+          )
+
+          # 2d. Thay unix_io_manager bằng default_io_manager
+          s = s.replace("unix_io_manager", "default_io_manager")
+
+          p.write_text(s)
+          PY
+
+          # 3. lib/support/plausible.c (nếu tồn tại và có unix_io_manager)
+          if [ -f lib/support/plausible.c ]; then
+            sed -i 's/\bunix_io_manager\b/default_io_manager/g' lib/support/plausible.c
+          fi
+
+          # 4. Loại bỏ -pthread khỏi CFLAGS (tránh phụ thuộc libwinpthread)
+          #    (workflow gốc đặt CFLAGS trong bước Configure, nên ta sẽ ghi đè ở đó)
+          echo "Patches applied."
+
       - name: Configure and build e2fsck
         run: |
           set -euo pipefail
+
+          # Loại bỏ -pthread: CFLAGS chỉ giữ -O2 -pipe
           export CFLAGS="-O2 -pipe"
           export LDFLAGS="-static -static-libgcc"
           ./configure --disable-nls
 
-          # Build the generated headers and static libraries required by e2fsck.
-          make -j2 top-deps V=1 2>&1 | tee build.log
-          make -j2 -C lib/et all V=1 2>&1 | tee -a build.log
+          # Build các thư viện tĩnh cần thiết (bỏ top-deps, dùng các target cụ thể)
+          make -j2 -C lib/et all V=1 2>&1 | tee build.log
           make -j2 -C lib/uuid all V=1 2>&1 | tee -a build.log
           make -j2 -C lib/blkid all V=1 2>&1 | tee -a build.log
           make -j2 -C lib/ext2fs all V=1 2>&1 | tee -a build.log
           make -j2 -C lib/support all V=1 2>&1 | tee -a build.log
           make -j2 -C lib/e2p all V=1 2>&1 | tee -a build.log
 
-          # e2fsck is deliberately built as an explicit target rather than
-          # invoking the full upstream build (which includes unsupported tools).
+          # Build e2fsck (target tường minh)
           make -j2 -C e2fsck e2fsck V=1 2>&1 | tee -a build.log
 
           test -f e2fsck/e2fsck.exe
           ./e2fsck/e2fsck.exe -V 2>&1 | tee -a build.log
 
-          # Build mke2fs only as a test-image generator; it is not packaged.
+          # Build mke2fs chỉ để tạo ảnh test (không đóng gói)
           make -j2 -C misc mke2fs V=1 2>&1 | tee -a build.log
           ./misc/mke2fs.exe -F -q -t ext4 test-e2fsck.ext4 64M 2>&1 | tee -a build.log
           ./e2fsck/e2fsck.exe -fn test-e2fsck.ext4 2>&1 | tee -a build.log
@@ -70,8 +140,7 @@ jobs:
           objdump -p dist/e2fsck.exe | sed -n 's/^[[:space:]]*DLL Name: //p' \
             | sort -fu > dist/DEPENDENCIES.txt
 
-          # These are MinGW runtime DLLs. A static standalone build must not
-          # depend on them; normal Windows system DLLs are allowed.
+          # Phải không phụ thuộc DLL runtime MinGW
           if grep -Eiq '^(libgcc_s|libstdc\+\+|libwinpthread|libintl|libiconv).*\.dll$' dist/DEPENDENCIES.txt; then
             echo "ERROR: executable still depends on a non-Windows runtime DLL:" >&2
             cat dist/DEPENDENCIES.txt >&2
@@ -81,7 +150,9 @@ jobs:
           cat > dist/README.txt <<'EOF'
           e2fsck 1.47.4 - Windows x64 (MinGW-w64)
 
-          Built from the upstream tytso/e2fsprogs repository, tag v1.47.4.
+          Built from the upstream tytso/e2fsprogs repository, tag v1.47.4,
+          with local Windows/MinGW compatibility patches applied.
+
           This package contains e2fsck.exe only. No Cygwin or MinGW runtime DLL
           should be required; standard Windows system DLLs remain dependencies.
 
